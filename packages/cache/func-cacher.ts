@@ -59,8 +59,10 @@ export function createFuncCacher(options: FuncCacherOptions): FuncCacherImpl {
               storage.set(key, result);
               return result;
             });
+          } else {
+            storage.set(key, result);
+            return result;
           }
-          return result;
         }
         return descriptor;
       });
