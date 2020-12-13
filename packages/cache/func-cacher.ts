@@ -15,6 +15,10 @@ interface FuncCacherOptions {
 const NOOP = () => { /** noop */ };
 const cacherFuncList: Func[] = [];
 
+function isPromise<T>(obj: any): obj is Promise<T> {
+  return obj && obj.then && obj.catch;
+}
+
 function redefineDescriptor(
   target: object,
   prop: PropertyKey,
@@ -44,15 +48,14 @@ export function createFuncCacher(options: FuncCacherOptions): FuncCacherImpl {
       return redefineDescriptor(target, prop, (descriptor) => {
         cacherFuncList.push(descriptor.value);
         const id = cacherFuncList.length - 1;
-        const areAsynceFunc = String(descriptor.value).startsWith("async ");
         descriptor.value = (...args: any[]) => {
           let key = id + "#" + JSON.stringify(args);
           if (storage.has(key)) {
             return storage.get(key);
           }
           const result = Reflect.apply(cacherFuncList[id], target, args);
-          if (areAsynceFunc || (result && result.then)) {
-            return (result as Promise<any>).then((result: any) => {
+          if (isPromise(result)) {
+            return result.then((result: any) => {
               storage.set(key, result);
               return result;
             });
